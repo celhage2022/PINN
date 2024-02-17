@@ -99,7 +99,7 @@ class PINNSolver():
 
         return self.f_r(self.t, self.x, u, u_t, u_x, u_xx)
     
-        
+
     def loss_f(self, X, u):
         '''
         Calcule de loss
@@ -146,7 +146,6 @@ class PINNSolver():
         
         for i in range(N):
             loss = train_step()
-            
             self.current_loss = loss.numpy()
             self.callback()
 
@@ -208,7 +207,7 @@ class PINNSolver():
 
     def plot_25_50_75(self, nom_save = 'plot'):
         '''
-        Plot 3 graphiques comparant solution exactes et solution prédites
+        Plot 3 graphiques comparant solutions exactes et solution prédites
         '''
         tspace, xspace, U = self.data_prep(N_t = 99, N_x = 255)
 

@@ -111,12 +111,19 @@ def solve_burger(num_model,
 
     solver.solve(optim, X_data, u_data, N = N)
 
-    model.save_weights('weights/model_b'+str(num_model)+'/weights')
+    model.save_weights('weights/model'+str(num_model)+'/weights')
     solver.plot_solution(nom_save='model'+str(num_model))
     solver.plot_25_50_75(nom_save='model'+str(num_model))
     solver.plot_loss_history(nom_save='loss_hist'+str(num_model))
     metrique = solver.metrique()
     print('metrique'+str(num_model)+' = '+f'{metrique}')
     return()
-    
-solve_burger(1, N=101)
+
+solve_burger(0, N=101)  
+# solve_burger(1, N=4001)
+# solve_burger(2, gamma = 0.25)
+# solve_burger(3, gamma = 0.5)
+# solve_burger(4, gamma = 1.5)
+# solve_burger(5, gamma = 2)
+# solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
+# solve_burger(7, N = 100001, le_ra = ([1000, 3000, 5000, 7000, 9000], [1e-2,1e-3,5e-4, 1e-4, 5e-5, 1e-5]))
