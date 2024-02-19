@@ -119,6 +119,9 @@ def solve_burger(num_model,
     print('metrique'+str(num_model)+' = '+f'{metrique}')
     return()
 
+print(len(X_data[0]))
+
+
 solve_burger(0, N=101)  
 # solve_burger(1, N=4001)
 # solve_burger(2, gamma = 0.25)
