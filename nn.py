@@ -62,12 +62,25 @@ class PINNSolver():
     Définie un solveur en se basant sur un modele déjà défini
     '''
 
-    def __init__(self, model, X_r, gamma = 1):
+    def __init__(self, model, X_r, gamma = 1, batch_size = 32):
         self.model = model
+        
          
         self.t = X_r[:,0:1]
         self.x = X_r[:,1:2]
+
+        #shuffle data and split data into batches for better trainning
+        tf.random.set_seed(42) #reproductibilite
+
+        combined_tensor = tf.concat([self.t, self.x], axis=-1)
+        shuffled_combined_tensor = tf.random.shuffle(combined_tensor)
+
+        t_shuf = shuffled_combined_tensor[:, :self.t.shape[-1]]
+        x_shuf = shuffled_combined_tensor[:, self.t.shape[-1]:]
         
+        num_batches = x_shuf.shape[0] // batch_size
+        self.batches = tf.data.Dataset.from_tensor_slices((t_shuf, x_shuf)).batch(batch_size)
+
         # historique de loss et nmbre d'iterations
         self.hist_loss = []
         self.iter = 0
@@ -81,30 +94,30 @@ class PINNSolver():
         return u_t + u * u_x - viscosity * u_xx
         
 
-    def get_r(self):
+    def get_r(self, batch_t, batch_x):
         '''
         Calcule le residu de l'EDP
         '''
         with tf.GradientTape(persistent=True) as tape:
-            tape.watch(self.t)
-            tape.watch(self.x)                
+            tape.watch(batch_t)
+            tape.watch(batch_x)                
                 
-            u = self.model(tf.stack([self.t[:,0], self.x[:,0]], axis=1))
+            u = self.model(tf.stack([batch_t[:,0], batch_x[:,0]], axis=1))
                 
-            u_x = tape.gradient(u, self.x)  
-            u_t = tape.gradient(u, self.t)
-            u_xx = tape.gradient(u_x, self.x)
+            u_x = tape.gradient(u, batch_x)  
+            u_t = tape.gradient(u, batch_t)
+            u_xx = tape.gradient(u_x, batch_x)
             
         del tape
 
-        return self.f_r(self.t, self.x, u, u_t, u_x, u_xx)
+        return self.f_r(batch_t, batch_x, u, u_t, u_x, u_xx)
     
 
-    def loss_f(self, X, u):
+    def loss_f(self, X, u, batch_t, batch_x):
         '''
         Calcule de loss
         '''
-        r = self.get_r()
+        r = self.get_r(batch_t, batch_x)
         MSEf = tf.reduce_mean(tf.square(r)) 
                 
         u_pred = self.model(X)
@@ -115,13 +128,13 @@ class PINNSolver():
         return loss
     
 
-    def get_grad(self, X, u):
+    def get_grad(self, X, u, batch_t, batch_x):
         '''
         Calcule le gradient par rapport aux poids et aux biais
         '''
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(self.model.trainable_variables)
-            loss = self.loss_f(X, u)
+            loss = self.loss_f(X, u, batch_t, batch_x)
             
             grad = tape.gradient(loss, self.model.trainable_variables)
         
@@ -135,17 +148,19 @@ class PINNSolver():
         optimisation par SGD
         '''
         @tf.function
-        def train_step():
+        def train_step(batch_t, batch_x):
             '''
             Réalise un pas de la SGD
             '''
-            loss, grad = self.get_grad(X, u)
+            loss, grad = self.get_grad(X, u, batch_t, batch_x)
             
             optimizer.apply_gradients(zip(grad, self.model.trainable_variables))
             return loss
         
         for i in range(N):
-            loss = train_step()
+            for batch_t, batch_x in self.batches : 
+                loss = train_step(batch_t, batch_x)
+            
             self.current_loss = loss.numpy()
             self.callback()
 
