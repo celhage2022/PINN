@@ -64,22 +64,10 @@ class PINNSolver():
 
     def __init__(self, model, X_r, gamma = 1, batch_size = 32):
         self.model = model
+        self.batch_size = batch_size
         
-         
         self.t = X_r[:,0:1]
         self.x = X_r[:,1:2]
-
-        #shuffle data and split data into batches for better trainning
-        tf.random.set_seed(42) #reproductibilite
-
-        combined_tensor = tf.concat([self.t, self.x], axis=-1)
-        shuffled_combined_tensor = tf.random.shuffle(combined_tensor)
-
-        t_shuf = shuffled_combined_tensor[:, :self.t.shape[-1]]
-        x_shuf = shuffled_combined_tensor[:, self.t.shape[-1]:]
-        
-        num_batches = x_shuf.shape[0] // batch_size
-        self.batches = tf.data.Dataset.from_tensor_slices((t_shuf, x_shuf)).batch(batch_size)
 
         # historique de loss et nmbre d'iterations
         self.hist_loss = []
@@ -94,10 +82,12 @@ class PINNSolver():
         return u_t + u * u_x - viscosity * u_xx
         
 
-    def get_r(self, batch_t, batch_x):
+    def get_r(self):
         '''
         Calcule le residu de l'EDP
         '''
+        batch_t, batch_x = self.iterator.get_next()
+
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(batch_t)
             tape.watch(batch_x)                
@@ -113,11 +103,11 @@ class PINNSolver():
         return self.f_r(batch_t, batch_x, u, u_t, u_x, u_xx)
     
 
-    def loss_f(self, X, u, batch_t, batch_x):
+    def loss_f(self, X, u):
         '''
         Calcule de loss
         '''
-        r = self.get_r(batch_t, batch_x)
+        r = self.get_r()
         MSEf = tf.reduce_mean(tf.square(r)) 
                 
         u_pred = self.model(X)
@@ -128,13 +118,13 @@ class PINNSolver():
         return loss
     
 
-    def get_grad(self, X, u, batch_t, batch_x):
+    def get_grad(self, X, u):
         '''
         Calcule le gradient par rapport aux poids et aux biais
         '''
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(self.model.trainable_variables)
-            loss = self.loss_f(X, u, batch_t, batch_x)
+            loss = self.loss_f(X, u)
             
             grad = tape.gradient(loss, self.model.trainable_variables)
         
@@ -142,32 +132,46 @@ class PINNSolver():
         
         return loss, grad
     
+
+    def create_batches(self, N):
+        combined_tensor = tf.concat([self.t, self.x], axis=-1)
+        shuffled_combined_tensor = tf.random.shuffle(combined_tensor)
+
+        t_shuf = shuffled_combined_tensor[:, :self.t.shape[-1]]
+        x_shuf = shuffled_combined_tensor[:, self.t.shape[-1]:]
+    
+        batches = tf.data.Dataset.from_tensor_slices((t_shuf, x_shuf)).batch(self.batch_size).repeat(N)
+        self.iterator = iter(batches)
+        return(len(batches))
+
+    
     
     def solve(self, optimizer, X, u, N=1001):
         '''
         optimisation par SGD
         '''
         @tf.function
-        def train_step(batch_t, batch_x):
+        def train_step():
             '''
             Réalise un pas de la SGD
             '''
-            loss, grad = self.get_grad(X, u, batch_t, batch_x)
+            loss, grad = self.get_grad(X, u)
             
             optimizer.apply_gradients(zip(grad, self.model.trainable_variables))
             return loss
         
+        nbr_batches = self.create_batches(N)        
         for i in range(N):
-            for batch_t, batch_x in self.batches : 
-                loss = train_step(batch_t, batch_x)
-            
+            for _ in range(nbr_batches) : 
+                loss = train_step()
+
             self.current_loss = loss.numpy()
             self.callback()
 
         
     def callback(self):
         '''
-        Print tout les 50 itérations le nombre d'itération et la valeure de loss
+        Print tout les 50 itérations le nombre d'itération et la valeur de loss
         '''
         if self.iter % 50 == 0:
             print('It {:05d}: loss = {:10.8e}'.format(self.iter,self.current_loss))
