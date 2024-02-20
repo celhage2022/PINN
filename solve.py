@@ -96,7 +96,8 @@ def solve_burger(num_model,
                  ub = ub,
                  gamma = 1,
                  le_ra = ([1000,3000], [1e-2,1e-3,5e-4]),
-                 N = 4001):
+                 N = 4001,
+                 batch_size = 32):
     
     model = PINN(lb = lb, ub=ub,
                  num_hidden_layers=num_hidden_layers, 
@@ -104,7 +105,7 @@ def solve_burger(num_model,
                  activation=activation)
     model.build(input_shape=(None,2))
 
-    solver = PINNSolver(model, X_r, gamma)
+    solver = PINNSolver(model, X_r, gamma, batch_size)
 
     lr = tf.keras.optimizers.schedules.PiecewiseConstantDecay(le_ra[0],le_ra[1])
     optim = tf.keras.optimizers.Adam(learning_rate=lr)
@@ -122,11 +123,11 @@ def solve_burger(num_model,
 print(len(X_data[0]))
 
 
-solve_burger(0, N=101)  
-# solve_burger(1, N=4001)
-# solve_burger(2, gamma = 0.25)
-# solve_burger(3, gamma = 0.5)
-# solve_burger(4, gamma = 1.5)
-# solve_burger(5, gamma = 2)
-# solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
-# solve_burger(7, N = 100001, le_ra = ([1000, 3000, 5000, 7000, 9000], [1e-2,1e-3,5e-4, 1e-4, 5e-5, 1e-5]))
+solve_burger(0, N=101, batch_size = 100)  
+solve_burger(1, N=4001)
+solve_burger(2, gamma = 0.25)
+solve_burger(3, gamma = 0.5)
+solve_burger(4, gamma = 1.5)
+solve_burger(5, gamma = 2)
+solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
+solve_burger(7, N = 100001, le_ra = ([1000, 3000, 5000, 7000, 9000], [1e-2,1e-3,5e-4, 1e-4, 5e-5, 1e-5]))

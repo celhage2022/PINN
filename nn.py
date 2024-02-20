@@ -142,7 +142,7 @@ class PINNSolver():
     
         batches = tf.data.Dataset.from_tensor_slices((t_shuf, x_shuf)).batch(self.batch_size).repeat(N)
         self.iterator = iter(batches)
-        return(len(batches))
+        return(int(len(batches)/N))
 
     
     
@@ -162,7 +162,8 @@ class PINNSolver():
         
         nbr_batches = self.create_batches(N)        
         for i in range(N):
-            for _ in range(nbr_batches) : 
+            print(i)
+            for _ in range(nbr_batches) :
                 loss = train_step()
 
             self.current_loss = loss.numpy()
