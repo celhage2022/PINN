@@ -1,0 +1,4 @@
+*.ods
+plot/
+__pycache__/
+weights/
