@@ -98,7 +98,7 @@ def solve_burger(num_model,
                  ub = ub,
                  gamma = 1,
                  le_ra = ([100,300,400], [1e-3,5e-4,1e-4,5e-5]),
-                 N = 1,
+                 N = 401,
                  batch_size = 100):
     
     model = PINN(lb = lb, ub=ub,
