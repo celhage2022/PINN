@@ -162,7 +162,6 @@ class PINNSolver():
         
         nbr_batches = self.create_batches(N)        
         for i in range(N):
-            print(i)
             for _ in range(nbr_batches) :
                 loss = train_step()
 

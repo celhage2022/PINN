@@ -2,6 +2,8 @@ from nn import PINN, PINNSolver
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+import xlwt
 
 DTYPE='float32'
 tf.keras.backend.set_floatx(DTYPE)
@@ -95,9 +97,9 @@ def solve_burger(num_model,
                  lb = lb,
                  ub = ub,
                  gamma = 1,
-                 le_ra = ([1000,3000], [1e-2,1e-3,5e-4]),
-                 N = 4001,
-                 batch_size = 32):
+                 le_ra = ([100,300,400], [1e-3,5e-4,1e-4,5e-5]),
+                 N = 1,
+                 batch_size = 100):
     
     model = PINN(lb = lb, ub=ub,
                  num_hidden_layers=num_hidden_layers, 
@@ -110,24 +112,53 @@ def solve_burger(num_model,
     lr = tf.keras.optimizers.schedules.PiecewiseConstantDecay(le_ra[0],le_ra[1])
     optim = tf.keras.optimizers.Adam(learning_rate=lr)
 
+    temps_depart = time.time()
     solver.solve(optim, X_data, u_data, N = N)
+    temps_final = time.time()
+    temps_ecoule = temps_final - temps_depart
 
     model.save_weights('weights/model'+str(num_model)+'/weights')
     solver.plot_solution(nom_save='model'+str(num_model))
     solver.plot_25_50_75(nom_save='model'+str(num_model))
     solver.plot_loss_history(nom_save='loss_hist'+str(num_model))
     metrique = solver.metrique()
-    print('metrique'+str(num_model)+' = '+f'{metrique}')
-    return()
+    print(f'metrique{num_model} = {metrique}')
+    print(f'time{num_model} = {temps_ecoule} secondes')
+    return(metrique, temps_ecoule)
 
-print(len(X_data[0]))
+
+#GridSearch sur gamma et batch size
+
+list_gamma = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 5, 10]
+list_batch_size = [10, 20, 50, 100, 200, 500]
+
+best_gamma = list_gamma[0]
+best_batch_size = list_batch_size[0]
+best_metrique = float('inf')
+
+wb = xlwt.Workbook()
+sheet = wb.add_sheet("Feuille 1")
+
+for i in range(len(list_gamma)):
+    sheet.write(0, 1+i, list_gamma[i])
+for j in range(len(list_batch_size)):
+    sheet.write(1+j, 0, list_batch_size[j])
+
+for i in range(len(list_gamma)):
+    for j in range(len(list_batch_size)):
+        new_metrique, temps_ecoule = solve_burger(i*10+j, gamma = list_gamma[i], batch_size=list_batch_size[j])
+        sheet.write(i+1,j+1, str(new_metrique)+'/'+str(temps_ecoule))
+        if new_metrique < best_metrique:
+            best_metrique = new_metrique
+            best_gamma = list_gamma[i]
+            best_batch_size = list_batch_size[j]
+
+print(f"best_gamma = {best_gamma}")
+print(f"best_batch_size = {best_batch_size}")
+
+wb.save("test_avec_batch.ods")
 
 
-solve_burger(0, N=101, batch_size = 100)  
-solve_burger(1, N=4001)
-solve_burger(2, gamma = 0.25)
-solve_burger(3, gamma = 0.5)
-solve_burger(4, gamma = 1.5)
-solve_burger(5, gamma = 2)
-solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
-solve_burger(7, N = 100001, le_ra = ([1000, 3000, 5000, 7000, 9000], [1e-2,1e-3,5e-4, 1e-4, 5e-5, 1e-5]))
+#autre tentative pour voir
+solve_burger(101, num_hidden_layers=2, num_neurons_per_layer=200)
+solve_burger(102, N = 1001, le_ra = ([100, 300, 500, 700, 900], [1e-3,1e-4,5e-5, 1e-5, 5e-6, 1e-6]))
