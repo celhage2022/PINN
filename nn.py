@@ -3,6 +3,7 @@ import numpy as np
 from tensorflow import keras
 import matplotlib.pyplot as plt
 import scipy
+import time
 
 DTYPE='float32'
 tf.keras.backend.set_floatx(DTYPE)
@@ -71,7 +72,10 @@ class PINNSolver():
 
         # historique de loss et nmbre d'iterations
         self.hist_loss = []
-        self.iter = 0
+        self.epoch = 0
+        self.time_epoch = 0
+        self.batch = 0
+        self.time_batch = 0
         self.gamma = gamma
 
 
@@ -160,23 +164,40 @@ class PINNSolver():
             optimizer.apply_gradients(zip(grad, self.model.trainable_variables))
             return loss
         
-        nbr_batches = self.create_batches(N)        
+        nbr_batches = self.create_batches(N)  
         for i in range(N):
             for _ in range(nbr_batches) :
+
+                start_time = time.time()
                 loss = train_step()
+                end_time = time.time()
+                self.time_batch = end_time - start_time
 
-            self.current_loss = loss.numpy()
-            self.callback()
+                self.current_loss = loss.numpy()
+                self.callback_batch()
 
-        
-    def callback(self):
+            self.callback_epoch()
+
+    
+    def callback_batch(self):
         '''
-        Print tout les 50 epochs le nombre d'itération et la valeur de loss
+        Print nombre de batch dans l'epoch, la valeur de loss et temps de calcul
         '''
-        if self.iter % 50 == 0:
-            print('It {:05d}: loss = {:10.8e}'.format(self.iter,self.current_loss))
+        self.time_epoch += self.time_batch
+        print('It_batch {:05d}, time_batch = {:10.4e} s, loss = {:10.4e}'.format(self.batch, self.time_batch, self.current_loss))
+        self.batch += 1
+
+
+
+    def callback_epoch(self):
+        '''
+        Print le nombre d'epoch, la valeur de loss et temps de calcul depuis derniere epoch
+        '''
+        print('It_epoch {:05d}, time_epoch =  {:10.4e} ,loss = {:10.8e}'.format(self.epoch, self.time_epoch, self.current_loss))
         self.hist_loss.append(self.current_loss)
-        self.iter+=1
+        self.epoch+=1
+        self.time_epoch = 0
+        self.batch = 0
         
 
     def data_prep(self, N_x = 1000, N_t = 1000):

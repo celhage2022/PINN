@@ -3,7 +3,9 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import xlwt
+import cProfile
+import io
+import sys
 
 DTYPE='float32'
 tf.keras.backend.set_floatx(DTYPE)
@@ -24,7 +26,7 @@ def fun_u_b(t, x):
 # Nombre de train points
 N_0 = 500
 N_b = 500
-N_r = 50000
+N_r = 10000
 
 # Limites du domaines
 tmin = 0.
@@ -127,8 +129,29 @@ def solve_burger(num_model,
     return(metrique, temps_ecoule)
 
 
+
+with open('profilage.txt', 'w') as fichier_sortie:
+    # Redirect standard output temporarily to the buffer
+    original_stdout = sys.stdout
+    sys.stdout = buffer = io.StringIO()
+
+    profil = cProfile.Profile()
+    profil.enable()
+    solve_burger(0, batch_size=100, N=6)
+    profil.disable()
+
+    # Print stats to the captured buffer
+    profil.print_stats()
+
+    # Restore original standard output
+    sys.stdout = original_stdout
+
+    # Write the captured output to the file
+    fichier_sortie.write(buffer.getvalue())
+
+
 #solve_burger(1)
-solve_burger(2, batch_size=1000)
+#solve_burger(2, gamma = 0.25)
 # solve_burger(3, gamma = 0.5)
 # solve_burger(4, gamma=1.5)
 # solve_burger(5, gamma=2)
