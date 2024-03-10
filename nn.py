@@ -91,13 +91,13 @@ class PINNSolver():
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(batch_t)
             tape.watch(batch_x)                
-                
+            
             u = self.model(tf.stack([batch_t[:,0], batch_x[:,0]], axis=1))
                 
-            u_x = tape.gradient(u, batch_x)  
+            u_x = tape.gradient(u, batch_x)
             u_t = tape.gradient(u, batch_t)
             u_xx = tape.gradient(u_x, batch_x)
-            
+
         del tape
 
         return self.f_r(batch_t, batch_x, u, u_t, u_x, u_xx)
@@ -171,7 +171,7 @@ class PINNSolver():
         
     def callback(self):
         '''
-        Print tout les 50 itérations le nombre d'itération et la valeur de loss
+        Print tout les 50 epochs le nombre d'itération et la valeur de loss
         '''
         if self.iter % 50 == 0:
             print('It {:05d}: loss = {:10.8e}'.format(self.iter,self.current_loss))

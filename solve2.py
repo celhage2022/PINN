@@ -24,7 +24,7 @@ def fun_u_b(t, x):
 # Nombre de train points
 N_0 = 500
 N_b = 500
-N_r = 10000
+N_r = 50000
 
 # Limites du domaines
 tmin = 0.
@@ -127,38 +127,10 @@ def solve_burger(num_model,
     return(metrique, temps_ecoule)
 
 
-#GridSearch sur gamma et batch size
-
-list_gamma = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 5, 10]
-list_batch_size = [10, 20, 50, 100, 200, 500, 1000]
-
-best_gamma = list_gamma[0]
-best_batch_size = list_batch_size[0]
-best_metrique = float('inf')
-
-wb = xlwt.Workbook()
-sheet = wb.add_sheet("Feuille 1")
-
-for i in range(len(list_gamma)):
-    sheet.write(0, 1+i, list_gamma[i])
-for j in range(len(list_batch_size)):
-    sheet.write(1+j, 0, list_batch_size[j])
-
-for i in range(len(list_gamma)):
-    for j in range(len(list_batch_size)):
-        new_metrique, temps_ecoule = solve_burger(i*10+j, gamma = list_gamma[i], batch_size=list_batch_size[j])
-        sheet.write(i+1,j+1, str(new_metrique)+'/'+str(temps_ecoule))
-        if new_metrique < best_metrique:
-            best_metrique = new_metrique
-            best_gamma = list_gamma[i]
-            best_batch_size = list_batch_size[j]
-
-print(f"best_gamma = {best_gamma}")
-print(f"best_batch_size = {best_batch_size}")
-
-wb.save("test_avec_batch.ods")
-
-
-#autre tentative pour voir
-solve_burger(101, num_hidden_layers=2, num_neurons_per_layer=200)
-solve_burger(102, N = 1001, le_ra = ([100, 300, 500, 700, 900], [1e-3,1e-4,5e-5, 1e-5, 5e-6, 1e-6]))
+#solve_burger(1)
+solve_burger(2, batch_size=1000)
+# solve_burger(3, gamma = 0.5)
+# solve_burger(4, gamma=1.5)
+# solve_burger(5, gamma=2)
+# solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
+# solve_burger(7, N = 1001, le_ra = ([100, 300, 500, 700, 900], [1e-3,1e-4,5e-5, 1e-5, 5e-6, 1e-6]))

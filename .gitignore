@@ -3,3 +3,4 @@ plot/
 plot_sans_batch/
 __pycache__/
 weights/
+*.txt
