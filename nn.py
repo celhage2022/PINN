@@ -165,18 +165,18 @@ class PINNSolver():
             return loss
         
         nbr_batches = self.create_batches(N)  
-        for i in range(N):
-            for _ in range(nbr_batches) :
+        for i in range(N * nbr_batches):
 
-                start_time = time.time()
-                loss = train_step()
-                end_time = time.time()
-                self.time_batch = end_time - start_time
+            start_time = time.time()
+            loss = train_step()
+            end_time = time.time()
+            self.time_batch = end_time - start_time
 
-                self.current_loss = loss.numpy()
-                self.callback_batch()
+            self.current_loss = loss.numpy()
+            self.callback_batch()
 
-            self.callback_epoch()
+            if (i+1) % nbr_batches == 0:
+                self.callback_epoch()
 
     
     def callback_batch(self):
@@ -184,7 +184,11 @@ class PINNSolver():
         Print nombre de batch dans l'epoch, la valeur de loss et temps de calcul
         '''
         self.time_epoch += self.time_batch
-        print('It_batch {:05d}, time_batch = {:10.4e} s, loss = {:10.4e}'.format(self.batch, self.time_batch, self.current_loss))
+        print('It_epoch {:05d}, time_epoch = {:10.4e} s \
+              It_batch {:05d}, time_batch = {:10.4e} s, \
+              loss = {:10.4e}'.format(self.epoch, self.time_epoch,
+                                      self.batch, self.time_batch, 
+                                      self.current_loss))
         self.batch += 1
 
 
