@@ -4,3 +4,5 @@ plot_sans_batch/
 __pycache__/
 weights/
 *.txt
+*.html
+*.json
