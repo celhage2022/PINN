@@ -126,13 +126,13 @@ class PINNSolver():
         '''
         Calcule le gradient par rapport aux poids et aux biais
         '''
-        with tf.GradientTape(persistent=True) as tape:
+        with tf.GradientTape() as tape:
             tape.watch(self.model.trainable_variables)
             loss = self.loss_f(X, u)
             
             grad = tape.gradient(loss, self.model.trainable_variables)
         
-        del tape
+    
         
         return loss, grad
     
