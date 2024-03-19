@@ -99,7 +99,7 @@ def solve_burger(num_model,
                  gamma = 1,
                  le_ra = ([100,300,400], [1e-3,5e-4,1e-4,5e-5]),
                  N = 501,
-                 batch_size = 100):
+                 batch_size = 128):
     
     model = PINN(lb = lb, ub=ub,
                  num_hidden_layers=num_hidden_layers, 
@@ -130,7 +130,7 @@ def solve_burger(num_model,
 #GridSearch sur gamma et batch size
 
 list_gamma = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 5, 10]
-list_batch_size = [10, 20, 50, 100, 200, 500, 1000]
+list_batch_size = [32, 64, 128, 256, 512, 1024]
 
 best_gamma = list_gamma[0]
 best_batch_size = list_batch_size[0]

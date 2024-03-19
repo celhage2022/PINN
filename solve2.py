@@ -3,9 +3,6 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import cProfile
-import io
-import sys
 
 DTYPE='float32'
 tf.keras.backend.set_floatx(DTYPE)
@@ -15,7 +12,7 @@ pi = tf.constant(np.pi, dtype=DTYPE)
 viscosity = .01/pi
 
 # Fonction conditions initiales
-def fun_u_0(x):
+def fun_u_0(x): 
     return -tf.sin(pi * x)
 
 # Fonction conditions limites
@@ -101,7 +98,7 @@ def solve_burger(num_model,
                  gamma = 1,
                  le_ra = ([100,300,400], [1e-3,5e-4,1e-4,5e-5]),
                  N = 501,
-                 batch_size = 100):
+                 batch_size = 128):
     
     model = PINN(lb = lb, ub=ub,
                  num_hidden_layers=num_hidden_layers, 
@@ -129,11 +126,14 @@ def solve_burger(num_model,
     return(metrique, temps_ecoule)
 
 
-solve_burger(0, N = 11)
+
+
+#solve_burger(0, N = 11)
+
 
 #solve_burger(2, gamma = 0.25)
 # solve_burger(3, gamma = 0.5)
 # solve_burger(4, gamma=1.5)
 # solve_burger(5, gamma=2)
 # solve_burger(6, num_hidden_layers=2, num_neurons_per_layer=200)
-# solve_burger(7, N = 1001, le_ra = ([100, 300, 500, 700, 900], [1e-3,1e-4,5e-5, 1e-5, 5e-6, 1e-6]))
+solve_burger(7, gamma = 0.5 ,N = 1001, le_ra = ([100, 300, 500, 700, 900], [1e-3,1e-4,5e-5, 1e-5, 5e-6, 1e-6]))
